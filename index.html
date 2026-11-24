@@ -1,7 +1,16 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Kalkulator Harga Quick</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600&display=swap">
 <style>
+:root { color-scheme: light; }
+body { margin: 0; }
+[hidden] { display: none !important; }
+img { max-width: 100%; }
 /* Layout: katalog di kiri, ringkasan penawaran menempel di kanan; di HP ditumpuk dengan bar total di bawah. */
 :root {
   --bg: #f3f5f1;
@@ -125,6 +134,9 @@ details.cfg summary { cursor: pointer; font-weight: 600; font-size: 13px; }
 .bar .btn { flex: 0 0 auto; }
 @media (prefers-reduced-motion: no-preference) { .row, .chip, .step button { transition: background-color .12s, border-color .12s; } }
 </style>
+</head>
+<body>
+
 
 <div class="wrap">
   <header>
@@ -325,3 +337,6 @@ function init() {
 }
 init();
 </script>
+
+</body>
+</html>
