@@ -1,0 +1,327 @@
+<title>Kalkulator Harga Quick</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600&display=swap">
+<style>
+/* Layout: katalog di kiri, ringkasan penawaran menempel di kanan; di HP ditumpuk dengan bar total di bawah. */
+:root {
+  --bg: #f3f5f1;
+  --surface: #ffffff;
+  --surface2: #e9eee6;
+  --line: #d7ded3;
+  --fg: #1a2118;
+  --muted: #5a6557;
+  --accent: #2c6a38;
+  --on-accent: #ffffff;
+  --accent-soft: #dcebdc;
+  --warn: #8a5200;
+  --warn-bg: #fff0d1;
+  --font-body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-head: "Space Grotesk", "Inter", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #11160f; --surface: #1a2117; --surface2: #242c21; --line: #303a2c;
+    --fg: #e5eae2; --muted: #98a493; --accent: #7cc28a; --on-accent: #0e180f;
+    --accent-soft: #22381f; --warn: #f0b75a; --warn-bg: #3a2c10; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #11160f; --surface: #1a2117; --surface2: #242c21; --line: #303a2c;
+  --fg: #e5eae2; --muted: #98a493; --accent: #7cc28a; --on-accent: #0e180f;
+  --accent-soft: #22381f; --warn: #f0b75a; --warn-bg: #3a2c10; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 14px; line-height: 1.45;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 20px 88px;
+}
+.wrap { max-width: 1180px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
+.num { font-variant-numeric: tabular-nums; }
+button, input, select { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+header { display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: flex-end; justify-content: space-between; }
+h1 { font-family: var(--font-head); font-size: 24px; font-weight: 600; margin: 0; letter-spacing: -0.01em; }
+.sub { color: var(--muted); margin: 2px 0 0; font-size: 13px; }
+.branch { display: flex; flex-direction: column; gap: 4px; }
+.branch label, .lbl { font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+select, input[type=search], input[type=number] {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; min-height: 38px;
+}
+select { min-width: 180px; font-weight: 500; }
+
+.main { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; align-items: start; }
+@media (min-width: 900px) { .main { grid-template-columns: minmax(0, 1fr) 390px; } .side { position: sticky; top: 16px; } .bar { display: none !important; } body { padding-bottom: 24px; } }
+
+.toolbar { display: flex; flex-direction: column; gap: 10px; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 12px; }
+.filters { display: flex; flex-wrap: wrap; gap: 10px; }
+.field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.field.grow { flex: 1 1 220px; }
+.field select, .field input { width: 100%; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.chips .grp { font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); font-weight: 600; margin-right: 2px; min-width: 88px; }
+.chip { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 4px 11px; cursor: pointer; font-size: 13px; }
+.chip[aria-pressed=true] { background: var(--accent); border-color: var(--accent); color: var(--on-accent); font-weight: 600; }
+
+.list { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.sech { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; padding: 8px 12px; background: var(--surface2); border-block: 1px solid var(--line); font-family: var(--font-head); font-weight: 600; font-size: 13px; }
+.sech:first-child { border-top: 0; }
+.sech small { font-family: var(--font-body); font-weight: 500; color: var(--muted); font-size: 12px; }
+.pill { font-family: var(--font-body); font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); }
+.pill.warn { background: var(--warn-bg); color: var(--warn); }
+.row { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 8px 16px; align-items: center; padding: 10px 12px; border-bottom: 1px solid var(--line); }
+.row:last-child { border-bottom: 0; }
+.row.locked { opacity: 0.5; }
+.row.on { background: var(--accent-soft); }
+.nm { min-width: 0; overflow-wrap: anywhere; font-weight: 500; }
+.nm small { display: block; color: var(--muted); font-weight: 400; font-size: 12px; margin-top: 1px; }
+.pr { text-align: right; white-space: nowrap; }
+.pr .net { font-weight: 600; }
+.pr .list { display: block; color: var(--muted); font-size: 12px; text-decoration: line-through; background: none; border: 0; }
+@media (max-width: 560px) { .row { grid-template-columns: minmax(0, 1fr) auto; } .row .pr { grid-column: 1; text-align: left; } .row .step { grid-column: 2; grid-row: 1 / span 2; } }
+
+.step { display: inline-flex; align-items: center; gap: 2px; }
+.step button { width: 32px; height: 32px; border-radius: 6px; border: 1px solid var(--line); background: var(--surface); cursor: pointer; font-size: 16px; line-height: 1; }
+.step button:hover:not(:disabled) { border-color: var(--accent); }
+.step button:disabled { cursor: not-allowed; opacity: 0.5; }
+.step .q { min-width: 28px; text-align: center; font-weight: 600; }
+.step .add { width: auto; padding: 0 12px; font-size: 13px; font-weight: 600; background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+.empty { padding: 28px 12px; text-align: center; color: var(--muted); }
+
+.cart { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; display: flex; flex-direction: column; }
+.cart > * { padding-inline: 14px; }
+.cart h2 { font-family: var(--font-head); font-size: 16px; margin: 0; padding-block: 12px; display: flex; justify-content: space-between; align-items: center; gap: 8px; border-bottom: 1px solid var(--line); }
+.link { background: none; border: 0; color: var(--accent); cursor: pointer; font-size: 13px; font-weight: 600; padding: 4px 0; }
+.note { background: var(--warn-bg); color: var(--warn); border-radius: 6px; padding: 8px 10px; margin: 10px 14px 0; font-size: 13px; }
+.note.ok { background: var(--accent-soft); color: var(--accent); }
+.lines { padding-block: 6px; max-height: 340px; overflow-y: auto; }
+.lines h3 { margin: 10px 0 4px; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.ln { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 10px; padding: 8px 0; border-bottom: 1px dashed var(--line); align-items: center; }
+.ln .t { font-weight: 500; overflow-wrap: anywhere; font-size: 13px; }
+.ln .t.bad { color: var(--warn); }
+.ln .s { color: var(--muted); font-size: 12px; }
+.ln .step button { width: 26px; height: 26px; }
+.ln .amt { text-align: right; font-weight: 600; }
+.sum { padding-block: 10px; border-top: 1px solid var(--line); display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; font-size: 13px; }
+.sum .muted { color: var(--muted); }
+.sum .r { text-align: right; }
+.sum .neg { color: var(--accent); }
+.total { padding-block: 12px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+.total .v { font-family: var(--font-head); font-size: 24px; font-weight: 600; }
+.save { color: var(--accent); font-size: 12px; text-align: right; padding-bottom: 12px; }
+.acts { padding-block: 0 14px; display: flex; gap: 8px; }
+.btn { flex: 1; border-radius: 6px; padding: 10px 12px; font-weight: 600; cursor: pointer; border: 1px solid var(--accent); background: var(--accent); color: var(--on-accent); }
+.btn.alt { background: var(--surface); color: var(--fg); border-color: var(--line); }
+details.cfg { border-top: 1px solid var(--line); padding-block: 10px; }
+details.cfg summary { cursor: pointer; font-weight: 600; font-size: 13px; }
+.cfgg { display: grid; grid-template-columns: 1fr 84px; gap: 8px 12px; align-items: center; margin-top: 10px; font-size: 13px; }
+.cfgg input[type=number] { width: 100%; text-align: right; }
+.chk { grid-column: 1 / -1; display: flex; gap: 8px; align-items: flex-start; }
+.chk input { margin-top: 3px; }
+.bar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; background: var(--surface); border-top: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; gap: 12px;
+  padding: 10px max(16px, env(safe-area-inset-left, 0px)) calc(10px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-right, 0px)); }
+.bar .v { font-family: var(--font-head); font-size: 18px; font-weight: 600; }
+.bar .btn { flex: 0 0 auto; }
+@media (prefers-reduced-motion: no-preference) { .row, .chip, .step button { transition: background-color .12s, border-color .12s; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Kalkulator Harga Quick</h1>
+      <p class="sub">Pricelist resmi non-peti, 7 cabang. Dipakai internal.</p>
+    </div>
+    <div class="branch">
+      <label for="branch">Cabang</label>
+      <select id="branch"></select>
+    </div>
+  </header>
+
+  <div class="main">
+    <section aria-label="Daftar produk">
+      <div class="toolbar">
+        <div class="filters">
+          <div class="field"><label class="lbl" for="cat">Kategori</label><select id="cat"></select></div>
+          <div class="field grow"><label class="lbl" for="q">Cari</label><input id="q" type="search" placeholder="mis. G 1000, Kronos, roda besi"></div>
+        </div>
+      </div>
+      <div class="list" id="list" style="margin-top:16px"></div>
+    </section>
+
+    <aside class="side" id="ringkasan" aria-label="Ringkasan penawaran">
+      <div class="cart">
+        <h2><span>Ringkasan penawaran</span><button class="link" id="clear" type="button">Kosongkan</button></h2>
+        <div id="notes"></div>
+        <div class="lines" id="lines"></div>
+        <div class="sum" id="sum"></div>
+        <div class="total"><span class="lbl">Total nett</span><span class="v num" id="total">Rp 0</span></div>
+        <div class="save num" id="save"></div>
+        <div class="acts">
+          <button class="btn" id="copy" type="button">Salin penawaran</button>
+        </div>
+        <details class="cfg">
+          <summary>Pengaturan diskon</summary>
+          <div class="cfgg">
+            <label for="rUnit">Diskon unit (%)</label><input id="rUnit" type="number" min="0" max="100" step="0.5" value="20">
+            <label for="rAcc">Diskon perlengkapan saja (%)</label><input id="rAcc" type="number" min="0" max="100" step="0.5" value="12">
+            <label for="rBun">Perlengkapan bareng unit (%)</label><input id="rBun" type="number" min="0" max="100" step="0.5" value="20">
+          </div>
+        </details>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<div class="bar" id="bar">
+  <div><div class="lbl">Total nett</div><div class="v num" id="barTotal">Rp 0</div></div>
+  <button class="btn" id="toCart" type="button">Lihat ringkasan</button>
+</div>
+
+<script>
+const DATA = {"branches":["Jawa","Lampung","Pekanbaru","Medan","Makassar","Banjarmasin","Palu"],"sections":[{"id":1,"short":"Body Only","kind":"unit","basic":false,"needsBasic":false,"title":""},{"id":2,"short":"Paket Kopelan","kind":"unit","basic":false,"needsBasic":false,"title":""},{"id":3,"short":"Cultivator Kopel","kind":"unit","basic":false,"needsBasic":false,"title":""},{"id":4,"short":"Kronos","kind":"unit","basic":true,"needsBasic":false,"title":""},{"id":5,"short":"Amberjack","kind":"unit","basic":true,"needsBasic":false,"title":""},{"id":6,"short":"Boxer Rotary","kind":"unit","basic":true,"needsBasic":false,"title":""},{"id":7,"short":"Traktor","kind":"perl","basic":false,"needsBasic":false,"title":""},{"id":8,"short":"Rotary","kind":"perl","basic":false,"needsBasic":true,"title":""},{"id":9,"short":"Mower","kind":"perl","basic":false,"needsBasic":true,"title":""},{"id":10,"short":"Cultivator","kind":"perl","basic":false,"needsBasic":false,"title":""}],"items":[{"id":1,"sec":1,"name":"G 3000 ZEVA","p":[23700000,23966000,24422000,24322000,24846000,24905000,25002000]},{"id":2,"sec":1,"name":"G 1000 BOXER","p":[22410000,22676000,23132000,23032000,23556000,23615000,23712000]},{"id":3,"sec":1,"name":"G 1000","p":[22480000,22746000,23202000,23102000,23626000,23685000,23782000]},{"id":4,"sec":1,"name":"M 1000 Alfa","p":[27350000,27616000,28072000,27972000,28496000,28555000,28652000]},{"id":5,"sec":1,"name":"G 600","p":[19290000,19497000,19852000,19762000,20108000,20266000,20352000]},{"id":6,"sec":1,"name":"IMPALA","p":[17650000,17857000,18212000,18122000,18468000,18626000,18712000]},{"id":7,"sec":1,"name":"CAPUNG METAL Roda Karet Ring 12\"","p":[14540000,14683000,14930000,14860000,15114000,15270000,15340000]},{"id":8,"sec":1,"name":"CAPUNG METAL Roda Karet Ring 8\"","p":[13560000,13703000,13950000,13880000,14134000,14290000,14360000]},{"id":9,"sec":1,"name":"CAPUNG METAL Roda Karet Ring 12\" (Dengan Garu Impala)","p":[14900000,15043000,15290000,15220000,15474000,15630000,15700000]},{"id":10,"sec":1,"name":"CAPUNG METAL Roda Karet Ring 8\" (Dengan Garu Impala)","p":[13920000,14063000,14310000,14240000,14494000,14650000,14720000]},{"id":11,"sec":1,"name":"CAPUNG RAWA Roda Karet Ring 12\"","p":[15810000,15953000,16200000,16130000,16384000,16540000,16610000]},{"id":12,"sec":1,"name":"CAPUNG RAWA Roda Karet Ring 8\"","p":[14830000,14973000,15220000,15150000,15404000,15560000,15630000]},{"id":13,"sec":1,"name":"KASUARI","p":[9670000,9813000,10060000,9990000,10244000,10400000,10470000]},{"id":14,"sec":2,"name":"G 3000 ZEVA + Kubota RD 85 DI-1S","p":[42370000,42732000,43354000,43758000,43913000,43972000,44124000]},{"id":15,"sec":2,"name":"G 1000 BOXER + Kubota RD 85 DI-1S","p":[41210000,41572000,42194000,42598000,42753000,42812000,42964000]},{"id":16,"sec":2,"name":"G 1000 + Kubota RD 85 DI-1S","p":[41380000,41742000,42364000,42768000,42923000,42982000,43134000]},{"id":17,"sec":2,"name":"M 1000 Alfa + Kubota RD 85 DI-1S","p":[45930000,46292000,46914000,47318000,47473000,47532000,47684000]},{"id":18,"sec":2,"name":"G 3000 ZEVA + Kubota RD 85 DI-2S","p":[43030000,43392000,44014000,44418000,44573000,44632000,44784000]},{"id":19,"sec":2,"name":"G 1000 BOXER + Kubota RD 85 DI-2S","p":[41870000,42232000,42854000,43258000,43413000,43472000,43624000]},{"id":20,"sec":2,"name":"G 1000 + Kubota RD 85 DI-2S","p":[42040000,42402000,43024000,43428000,43583000,43642000,43794000]},{"id":21,"sec":2,"name":"M 1000 Alfa + Kubota RD 85 DI-2S","p":[46590000,46952000,47574000,47978000,48133000,48192000,48344000]},{"id":22,"sec":2,"name":"M 1000 Alfa + Kubota RD 110 DI-2T","p":[51150000,51512000,52134000,52538000,52693000,52762000,52904000]},{"id":23,"sec":2,"name":"G 600 + Kubota RD 65 DI-1S","p":[35920000,36223000,36744000,37082000,37056000,37099000,37212000]},{"id":24,"sec":2,"name":"IMPALA + Kubota RD 65 DI-1S","p":[34380000,34683000,35204000,35542000,35516000,35659000,35672000]},{"id":25,"sec":2,"name":"G 600 + Kubota RD 65 DI-2S","p":[36610000,36913000,37434000,37772000,37746000,37789000,37902000]},{"id":26,"sec":2,"name":"IMPALA + Kubota RD 65 DI-2S","p":[35070000,35373000,35894000,36232000,36206000,36249000,36362000]},{"id":27,"sec":2,"name":"CAPUNG METAL 12\" + Honda GX 200 T2 QD","p":[19990000,20153000,20436000,20617000,20638000,20664000,20726000]},{"id":28,"sec":2,"name":"CAPUNG METAL 8\" + Honda GX 200 T2 QD","p":[19010000,19173000,19456000,19637000,19658000,19684000,19746000]},{"id":29,"sec":2,"name":"CAPUNG METAL 12\" (+ Garu Impala) + Honda GX 200 T2 QD","p":[20350000,20513000,20796000,20977000,20998000,21024000,21086000]},{"id":30,"sec":2,"name":"CAPUNG METAL 8\" (+ Garu Impala) + Honda GX 200 T2 QD","p":[19370000,19533000,19816000,19997000,20018000,20044000,20106000]},{"id":31,"sec":2,"name":"CAPUNG RAWA 12\" + Honda GX 200 T2 QD","p":[21260000,21423000,21706000,21887000,21908000,21934000,21996000]},{"id":32,"sec":2,"name":"CAPUNG RAWA 8\" + Honda GX 200 T2 QD","p":[20280000,20443000,20726000,20907000,20928000,20954000,21016000]},{"id":33,"sec":3,"name":"CAKAR BAJA + Honda GX 200 T2 QTBD","p":[15750000,15913000,16196000,16377000,16398000,16424000,16488000]},{"id":34,"sec":3,"name":"KASUARI + Honda GX 200 T2 QTBD","p":[15130000,15293000,15576000,15757000,15778000,15804000,15868000]},{"id":35,"sec":3,"name":"CAKAR BAJA + Honda GX 160 T2 QTBD","p":[15530000,15693000,15976000,16157000,16178000,16204000,16266000]},{"id":36,"sec":3,"name":"KASUARI + Honda GX 160 T2 QTBD","p":[14910000,15073000,15356000,15537000,15558000,15584000,15646000]},{"id":37,"sec":4,"name":"Kronos Basic 1 (RD 110 DI-2T + RTH + Roda Karet 13 + Roda Besi Single 730)","p":[58170000,58711000,59422000,59680000,59882000,59950000,60075000]},{"id":38,"sec":4,"name":"Kronos Basic 2 (RD 110 DI-2T + RTH + Roda Karet 13 + Roda Besi Double 900 + Ext. 900mm)","p":[59740000,60217000,61039000,61290000,61490000,61560000,61791000]},{"id":39,"sec":4,"name":"Kronos Basic 3 (RD 110 DI-2T + RTH + Roda Karet 13 + Roda Besi Double 1050 + Foot Step + Tail Skid)","p":[61710000,62295000,63302000,63560000,63760000,63830000,64174000]},{"id":40,"sec":5,"name":"Amberjack Rotary Basic 1 (RD 110 DI-2T + Roda Besi Single 730)","p":[59890000,60513000,61590000,62288000,62540000,62639000,62901000]},{"id":41,"sec":5,"name":"Amberjack Rotary Basic 2 (RD 110 DI-2T + Roda Besi Double 900 + Ext. 900mm)","p":[61510000,62019000,63207000,63977000,64222000,64331000,64617000]},{"id":42,"sec":5,"name":"Amberjack Rotary Basic 3 (RD 110 DI-2T + Roda Besi Double 1050 + Foot Step + Tail Skid)","p":[63300000,64097000,65470000,66362000,66557000,66678000,67000000]},{"id":43,"sec":5,"name":"Amberjack Mower Basic 4 (RD 110 DI-2T + Mower Only + Manual Counter Weight + Single Rear Wheel + Tire 16\")","p":[77070000,78072000,79799000,80916000,80883000,81025000,81402000]},{"id":44,"sec":5,"name":"Amberjack Mower Basic 5 (RD 110 DI-2T + Mower Only + Manual Counter Weight + Dual Rear Wheel + Tire 16\")","p":[78380000,79380000,81062000,82242000,82157000,82305000,82700000]},{"id":45,"sec":5,"name":"Amberjack Mower Basic 6 (RD 110 DI-2T + Mower Only + Manual Counter Weight + Peatlands Rear Wheel + Tire Peatlands 16\")","p":[81370000,82370000,84286000,85480000,85380000,85532000,85929000]},{"id":46,"sec":5,"name":"Amberjack Mower Basic 7 (RD 110 DI-2T + Mower Only + Manual Counter Weight + Single Wheel Fork + Hour Meter Manual)","p":[83000000,84000000,85998000,87224000,87083000,87240000,87635000]},{"id":47,"sec":5,"name":"Amberjack Mower Basic 8 (RD 110 DI-NB Lampu + Mower Only + Counter Weight Elektrik + Hour Meter Elektrik)","p":[97490000,98490000,100533000,101778000,101602000,101749000,102157000]},{"id":48,"sec":6,"name":"Boxer Rotary Forward Basic 1 (RD 110 DI-2T + RTH Forward + Chopper + R.Karet 13 + R.Besi Single 730)","p":[58760000,59116000,59828000,60287000,60320000,60381000,60600000]},{"id":49,"sec":6,"name":"Boxer Rotary Forward Basic 2 (RD 110 DI-2T + RTH Forward + Chopper + R.Karet 13 + R.Besi Double 900 + Ext)","p":[60200000,60622000,61445000,61976000,62002000,62073000,62316000]},{"id":50,"sec":6,"name":"Boxer Rotary Forward Basic 3 (RD 110 DI-2T + RTH Forward + Chopper + R.Karet 13 + R.Besi Double 1050 + Foot Step + Tail Skid)","p":[62070000,62600000,63608000,64261000,64237000,64320000,64599000]},{"id":51,"sec":6,"name":"Boxer Rotary Forward Reverse Basic 4A (RD 110 DI-2T + RTH FR + Ditcher + R.Karet 13 + R.Besi Single 585 + Cover + Front Ridger + Tail Skid)","p":[64840000,65183000,65868000,66312000,66350000,66412000,66624000]},{"id":52,"sec":6,"name":"Boxer Rotary Forward Reverse Basic 4B (RD 110 DI-2T + RTH FR + Ditcher + R.Karet 13 + R.Besi Single 585 + Ridger FR + Front Ridger + Tail Skid)","p":[65660000,66047000,66811000,67304000,67340000,67397000,67588000]},{"id":53,"sec":6,"name":"Boxer Rotary Forward Reverse Basic 5 (RD 110 DI-2T + RTH FR + Chopper + R.Karet 13 + R.Besi Double Ring 685)","p":[62810000,63157000,63854000,64304000,64350000,64406000,64621000]},{"id":54,"sec":6,"name":"Boxer Rotary Forward Reverse Basic 6 (RD 110 DI-2T + RTH FR + Chopper + R.Karet 13 + R.Besi Single Ring 730)","p":[62270000,62646000,63394000,63876000,63896000,63958000,64181000]},{"id":55,"sec":6,"name":"Boxer Rotary Forward Reverse Basic 7 (RD 110 DI-2T + RTH FR + Chopper + R.Karet 13 + R.Besi Double Ring 900 + Ext 900mm)","p":[63710000,64152000,65011000,65565000,65578000,65650000,65897000]},{"id":56,"sec":6,"name":"Boxer Rotary Forward Reverse Basic 8 (RD 110 DI-2T + RTH FR + Chopper + R.Karet 13 + R.Besi Double Ring 1050 + Foot Step + Tail Skid)","p":[65580000,66130000,67174000,67850000,67813000,67897000,68180000]},{"id":57,"sec":7,"name":"Roda Karet Ring 13 (Set)","p":[2190000,2217000,2264000,2293000,2297000,2301000,2312000]},{"id":58,"sec":7,"name":"Roda Karet Ring 12 (Set)","p":[2080000,2100000,2146000,2174000,2178000,2182000,2192000]},{"id":59,"sec":7,"name":"Roda Karet Ring 8 (Set)","p":[1480000,1488000,1502000,1511000,1514000,1518000,1518000]},{"id":60,"sec":7,"name":"Bajak Parabola Super G1000/M1000 (Unt)","p":[4570000,4588000,4648000,4636000,4640000,4641000,4648000]},{"id":61,"sec":7,"name":"Bajak Parabola Super G1000 Boxer/G3000 Zeva (Unt)","p":[4680000,4698000,4758000,4746000,4750000,4751000,4758000]},{"id":62,"sec":7,"name":"Bajak Parabola Light G1000 Boxer (Unt)","p":[4610000,4628000,4688000,4676000,4680000,4681000,4688000]},{"id":63,"sec":7,"name":"Hitch II G1000 (Unt)","p":[500000,504000,514000,518000,519000,520000,522000]},{"id":64,"sec":7,"name":"Hitch II M1000 (Unt)","p":[530000,534000,544000,548000,549000,550000,552000]},{"id":65,"sec":7,"name":"Hitch II G1000 Boxer (Unt)","p":[710000,716000,728000,734000,735000,736000,740000]},{"id":66,"sec":7,"name":"Hitch II G3000 Zeva (Unt)","p":[680000,686000,698000,704000,705000,706000,710000]},{"id":67,"sec":7,"name":"Hitch II G600 (Unt)","p":[470000,473000,481000,485000,486000,487000,489000]},{"id":68,"sec":7,"name":"Hitch II Impala (Unt)","p":[560000,564000,574000,578000,579000,580000,582000]},{"id":69,"sec":7,"name":"Bajak tipe 1 (G1000/M1000/Boxer/Zeva) (Unt)","p":[1280000,1226000,1308000,1319000,1321000,1323000,1328000]},{"id":70,"sec":7,"name":"Bajak tipe 35 (G1000/Boxer/M1000) (Unt)","p":[1240000,1272000,1268000,1279000,1281000,1283000,1288000]},{"id":71,"sec":7,"name":"Bajak tipe 35 A G1000 (Unt)","p":[980000,988000,1004000,1012000,1013000,1015000,1019000]},{"id":72,"sec":7,"name":"Bajak tipe 35 A G1000 Boxer (Unt)","p":[970000,978000,994000,1002000,1003000,1005000,1009000]},{"id":73,"sec":7,"name":"Bajak tipe 5 G3000 Zeva / G600 (Unt)","p":[1210000,1244000,1238000,1249000,1251000,1253000,1258000]},{"id":74,"sec":7,"name":"Bajak tipe sedang Impala (Unt)","p":[830000,858000,854000,862000,863000,865000,869000]},{"id":75,"sec":7,"name":"Bajak tipe besar Impala (Unt)","p":[810000,840000,834000,842000,843000,845000,849000]},{"id":76,"sec":7,"name":"Bajak tipe CM Capung Metal (Unt)","p":[690000,710000,706000,712000,713000,715000,718000]},{"id":77,"sec":7,"name":"Bajak tipe CR Capung Rawa (Unt)","p":[1140000,1180000,1166000,1175000,1177000,1179000,1183000]},{"id":78,"sec":7,"name":"Garu G1000 Boxer / G3000 Zeva (Unt)","p":[1280000,1531000,1308000,1319000,1321000,1323000,1328000]},{"id":79,"sec":7,"name":"Garu G1000 / M1000 (Unt)","p":[1060000,1286000,1084000,1093000,1095000,1097000,1101000]},{"id":80,"sec":7,"name":"Garu G600 (Unt)","p":[930000,1068000,950000,958000,960000,962000,965000]},{"id":81,"sec":7,"name":"Garu Impala (Unt)","p":[720000,826000,738000,745000,746000,748000,751000]},{"id":82,"sec":7,"name":"Garu Capung Metal / Capung Rawa (Unt)","p":[390000,413000,400000,405000,406000,407000,410000]},{"id":83,"sec":7,"name":"Gelebek G1000 Boxer / G3000 Zeva (Unt)","p":[1600000,1782000,1636000,1650000,1653000,1655000,1662000]},{"id":84,"sec":7,"name":"Gelebek G1000 / M1000 (Unt)","p":[1540000,1722000,1574000,1587000,1590000,1592000,1599000]},{"id":85,"sec":7,"name":"Gelebek G600 (Unt)","p":[1490000,1648000,1522000,1535000,1538000,1540000,1547000]},{"id":86,"sec":7,"name":"Gelebek Impala (Unt)","p":[1350000,1462000,1378000,1390000,1393000,1395000,1401000]},{"id":87,"sec":7,"name":"Gelebek Capung Metal / Capung Rawa (Unt)","p":[1180000,1284000,1206000,1216000,1218000,1220000,1225000]},{"id":88,"sec":7,"name":"Roda Besi G3000 Zeva (Set)","p":[2960000,3066000,3032000,3060000,3065000,3070000,3082000]},{"id":89,"sec":7,"name":"Roda Besi G1000 Boxer (Set)","p":[2700000,2606000,2766000,2792000,2797000,2801000,2812000]},{"id":90,"sec":7,"name":"Roda Besi G1000 / M1000 (Set)","p":[2660000,2786000,2724000,2750000,2755000,2759000,2770000]},{"id":91,"sec":7,"name":"Roda Besi G600 (Set)","p":[2040000,2146000,2090000,2110000,2114000,2117000,2125000]},{"id":92,"sec":7,"name":"Roda Besi Impala (Set)","p":[1660000,1732000,1700000,1716000,1719000,1722000,1729000]},{"id":93,"sec":7,"name":"Roda Besi Ring Tengah Capung Metal (Set)","p":[1340000,1392000,1372000,1385000,1388000,1390000,1396000]},{"id":94,"sec":7,"name":"Roda Besi Ring Bawah Capung Metal (Set)","p":[1340000,1392000,1372000,1385000,1388000,1390000,1396000]},{"id":95,"sec":7,"name":"Roda Besi Capung Rawa (Set)","p":[2400000,2499000,2460000,2483000,2487000,2491000,2501000]},{"id":96,"sec":7,"name":"Roda Besi Tapak Lebar A G1000/M1000/Boxer (Set)","p":[2960000,3084000,3032000,3060000,3065000,3070000,3082000]},{"id":97,"sec":7,"name":"Roda Besi Tapak Lebar C G1000 Boxer (Set)","p":[3180000,3304000,3258000,3288000,3293000,3298000,3311000]},{"id":98,"sec":7,"name":"Roda Besi Tapak Panjang A G1000/M1000/Boxer (Set)","p":[4000000,4158000,4098000,4136000,4143000,4149000,4165000]},{"id":99,"sec":8,"name":"Rotary Transmission Housing (RTH)* Kronos & Amberjack (Set)","p":[12040000,12138000,12308000,12418000,12412000,12426000,12463000]},{"id":100,"sec":8,"name":"Rotary Transmission Housing (RTH)* Forward Reverse Boxer (Set)","p":[13620000,13718000,13888000,13998000,13992000,14006000,14043000]},{"id":101,"sec":8,"name":"Rotary Transmission Housing (RTH)* Forward Boxer (Set)","p":[10110000,10188000,10322000,10409000,10416000,10429000,10462000]},{"id":102,"sec":8,"name":"Chopper Blade Boxer Rotary (Set)","p":[2300000,2320000,2356000,2379000,2364000,2366000,2372000]},{"id":103,"sec":8,"name":"Ditcher Blade Boxer Rotary Forward Reverse (Set)","p":[2680000,2700000,2736000,2759000,2744000,2746000,2752000]},{"id":104,"sec":8,"name":"Ditcher Rotor Boxer Rotary Forward (Set)","p":[1650000,1666000,1688000,1702000,1696000,1697000,1701000]},{"id":105,"sec":8,"name":"Ditching Rotor Kronos & Amberjack (Set)","p":[1480000,1502000,1539000,1563000,1547000,1550000,1556000]},{"id":106,"sec":8,"name":"Roda Besi Single Ring 585 Boxer FR (Set)","p":[2020000,2030000,2047000,2058000,2051000,2051000,2054000]},{"id":107,"sec":8,"name":"Roda Besi Double Ring 685 Boxer FR (Set)","p":[2260000,2295000,2356000,2396000,2379000,2383000,2395000]},{"id":108,"sec":8,"name":"Roda Besi Single Ring 730 Boxer/Kronos/Amberjack (Set)","p":[1720000,1784000,1896000,1968000,1928000,1935000,1955000]},{"id":109,"sec":8,"name":"Roda Besi Double Ring 900 Boxer/Kronos/Amberjack (Set)","p":[2500000,2628000,2850000,2994000,2947000,2964000,3008000]},{"id":110,"sec":8,"name":"Roda Besi Triple Ring 900 Tapak Panjang A (Lahan Rawa) (Set)","p":[3580000,3738000,4008000,4183000,4203000,4226000,4287000]},{"id":111,"sec":8,"name":"Roda Besi Double Ring 1050 Kronos & Amberjack (Set)","p":[3680000,3912000,4311000,4570000,4475000,4504000,4583000]},{"id":112,"sec":8,"name":"Roda Besi Double Ring 1050 Boxer Rotary (Set)","p":[3580000,3812000,4211000,4470000,4375000,4404000,4483000]},{"id":113,"sec":8,"name":"Ext. Roda Besi Double Ring 730/900 mm (Set)","p":[660000,662000,663000,663000,663000,663000,663000]},{"id":114,"sec":8,"name":"Ridger Forward Boxer/Kronos/Amberjack (Pcs)","p":[1260000,1367000,1551000,1670000,1602000,1614000,1648000]},{"id":115,"sec":8,"name":"Ridger Forward Reverse Boxer (Pcs)","p":[1910000,1970000,2076000,2144000,2090000,2096000,2114000]},{"id":116,"sec":8,"name":"Ditcher Cover Boxer FR (Pcs)","p":[1090000,1106000,1133000,1152000,1144000,1145000,1150000]},{"id":117,"sec":8,"name":"Front Ridger Boxer Rotary (Pcs)","p":[320000,323000,326000,328000,327000,326000,327000]},{"id":118,"sec":8,"name":"Tail Skid Boxer/Kronos/Amberjack (Pcs)","p":[480000,482000,484000,486000,487000,487000,487000]},{"id":119,"sec":8,"name":"Tail Skid Riding Boxer/Kronos/Amberjack (Pcs)","p":[1280000,1284000,1291000,1296000,1294000,1294000,1295000]},{"id":120,"sec":8,"name":"Foot Step Boxer/Kronos/Amberjack (Pcs)","p":[170000,172000,174000,176000,176000,176000,176000]},{"id":121,"sec":8,"name":"Hitch Boxer/Kronos/Amberjack (Pcs)","p":[400000,402000,404000,407000,407000,407000,407000]},{"id":122,"sec":8,"name":"Paket Minggiri (Side Hitch & Bajak) Boxer/Kronos/Amberjack (Set)","p":[1330000,1344000,1368000,1382000,1376000,1376000,1381000]},{"id":123,"sec":8,"name":"Iron Wheel Boxer/Kronos/Amberjack (Pcs)","p":[330000,333000,338000,341000,340000,338000,340000]},{"id":124,"sec":8,"name":"Garu Rotary Boxer/Kronos/Amberjack (Set)","p":[1310000,1536000,1925000,2177000,2205000,2238000,2328000]},{"id":125,"sec":8,"name":"Roda Besi Single Ring 730 mm Rotary Zena (Set)","p":[2700000,2782000,2900000,3038000,3030000,3038000,3070000]},{"id":126,"sec":8,"name":"Tangkai Peluncur (Tipe Lebar) Rotary Zena (Pcs)","p":[310000,316000,325000,334000,333000,334000,337000]},{"id":127,"sec":8,"name":"Ditching Rotor Rotary Zena (Pcs)","p":[2640000,2651000,2665000,2687000,2680000,2687000,2691000]},{"id":128,"sec":8,"name":"Ridger Zena Rotary Zena (Pcs)","p":[230000,2415000,2640000,2779000,2770000,2779000,2826000]},{"id":129,"sec":8,"name":"Swing Cover Rotary Zena (Pcs)","p":[4270000,4438000,4780000,4961000,4950000,4961000,5028000]},{"id":130,"sec":9,"name":"Mower Only* (tanpa Rear Wheel) (Set)","p":[22080000,22388000,22920000,23266000,23272000,23316000,23435000]},{"id":131,"sec":9,"name":"Mower Only* (tanpa Rear Wheel, tanpa Counter Weight) (Pcs)","p":[18490000,18798000,19330000,19676000,19682000,19726000,19845000]},{"id":132,"sec":9,"name":"Mower Counter Weight (manual starter) (Pcs)","p":[4700000,4718000,4750000,4770000,4767000,4770000,4776000]},{"id":133,"sec":9,"name":"Mower Counter Weight (elektrik starter) (Pcs)","p":[6360000,6395000,6455000,6494000,6456000,6459000,6468000]},{"id":134,"sec":9,"name":"Single Rear Wheel (Pcs)","p":[2370000,2466000,2633000,2740000,2654000,2665000,2693000]},{"id":135,"sec":9,"name":"Dual Rear Wheel (Pcs)","p":[5060000,5222000,5503000,5684000,5538000,5555000,5603000]},{"id":136,"sec":9,"name":"Peatlands Rear Wheel (Pcs)","p":[2630000,2726000,2893000,3000000,2914000,2925000,2953000]},{"id":137,"sec":9,"name":"Single Wheel Fork (Set)","p":[1530000,1626000,1793000,1900000,1814000,1825000,1853000]},{"id":138,"sec":9,"name":"Ban Angin (Set)","p":[850000,853000,858000,861000,860000,858000,860000]},{"id":139,"sec":9,"name":"Ban Pejal (Set)","p":[700000,703000,708000,711000,710000,708000,710000]},{"id":140,"sec":9,"name":"Operator Seat Single/Peatlands (Pcs)","p":[1580000,1591000,1607000,1618000,1610000,1610000,1612000]},{"id":141,"sec":9,"name":"Operator Seat Spring Single/Peatlands (Set)","p":[1920000,1931000,1947000,1958000,1950000,1950000,1952000]},{"id":142,"sec":9,"name":"Bumper Cover (Pcs)","p":[930000,953000,993000,1018000,976000,976000,981000]},{"id":143,"sec":9,"name":"Hour Meter (manual starter) (Set)","p":[760000,764000,771000,775000,771000,774000,775000]},{"id":144,"sec":9,"name":"Hour Meter (electric starter) (Set)","p":[900000,904000,911000,915000,914000,914000,915000]},{"id":145,"sec":9,"name":"Roda Karet RIM 16\" (Set)","p":[5920000,6006000,6154000,6248000,6172000,6180000,6206000]},{"id":146,"sec":9,"name":"Roda Karet Peatlands RIM 16\" (Set)","p":[7460000,7546000,7694000,7788000,7712000,7720000,7746000]},{"id":147,"sec":9,"name":"Roda Besi Peatlands (Set)","p":[2500000,2570000,2687000,2764000,2700000,2707000,2727000]},{"id":148,"sec":10,"name":"Roda Karet Ring 8 Cakar Baja (Set)","p":[1480000,1488000,1502000,1511000,1514000,1518000,1518000]},{"id":149,"sec":10,"name":"Roda Karet Ring 8 Kasuari (Set)","p":[840000,848000,862000,871000,874000,878000,878000]},{"id":150,"sec":10,"name":"Roda Karet Ring 6 Cakar Baja Mini (Set)","p":[920000,924000,932000,938000,938000,940000,940000]},{"id":151,"sec":10,"name":"RTH Cakar Baja (Unt)","p":[6880000,6896000,6926000,6944000,6947000,6950000,6955000]},{"id":152,"sec":10,"name":"Iron Wheel CW 370 Cakar Baja (Set)","p":[840000,850000,867000,876000,878000,882000,882000]},{"id":153,"sec":10,"name":"Iron Wheel CW 550 Cakar Baja (Set)","p":[1180000,1204000,1244000,1271000,1275000,1287000,1287000]},{"id":154,"sec":10,"name":"Main Rotary Blade B Cakar Baja (Set)","p":[1820000,1840000,1876000,1899000,1903000,1914000,1914000]},{"id":155,"sec":10,"name":"Main Rotary Blade B 100 Cakar Baja (Set)","p":[1440000,1444000,1452000,1458000,1458000,1460000,1460000]},{"id":156,"sec":10,"name":"Main Rotary Blade B 240 Cakar Baja (Set)","p":[1800000,1810000,1826000,1836000,1838000,1843000,1843000]},{"id":157,"sec":10,"name":"Ext. Drum Blade B 200 Cakar Baja (Set)","p":[1340000,1347000,1360000,1368000,1371000,1374000,1374000]},{"id":158,"sec":10,"name":"Main Rotary Blade J Cakar Baja (Set)","p":[1670000,1702000,1756000,1792000,1797000,1813000,1813000]},{"id":159,"sec":10,"name":"Main Rotary Blade S Cakar Baja (Set)","p":[1860000,1880000,1915000,1938000,1942000,1952000,1952000]},{"id":160,"sec":10,"name":"Stabilizer Disc Set Cakar Baja (Set)","p":[170000,172000,172000,172000,173000,173000,173000]},{"id":161,"sec":10,"name":"Paket Bajak Cakar Baja (Set)","p":[1090000,1100000,1116000,1126000,1128000,1132000,1132000]},{"id":162,"sec":10,"name":"Garu Cakar Baja (Unt)","p":[440000,492000,582000,639000,647000,675000,675000]},{"id":163,"sec":10,"name":"Ridger Cakar Baja / Mini (Unt)","p":[990000,1014000,1056000,1081000,1085000,1098000,1098000]},{"id":164,"sec":10,"name":"Blade S 500/720/920 CBM (Set)","p":[3600000,3615000,3640000,3656000,3659000,3667000,3667000]},{"id":165,"sec":10,"name":"Blade J 250 CBM (Set)","p":[810000,813000,818000,822000,825000,825000,825000]},{"id":166,"sec":10,"name":"Blade J 600 CBM (Set)","p":[1940000,1950000,1967000,1978000,1980000,1986000,1986000]},{"id":167,"sec":10,"name":"Blade J Kasuari (Set)","p":[2070000,2077000,2088000,2094000,2089000,2090000,2090000]},{"id":168,"sec":10,"name":"Ridger Kasuari (Set)","p":[890000,900000,914000,924000,916000,918000,918000]}]};
+const { branches: BR, sections: SECS, items: ITEMS } = DATA;
+const SEC = Object.fromEntries(SECS.map(s => [s.id, s]));
+const rp = n => 'Rp ' + Math.round(n).toLocaleString('id-ID');
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+// Contoh isi awal supaya kalkulator terlihat bekerja. Klik "Kosongkan" untuk mulai dari nol.
+const st = { branch: 0, qty: { 2: 1, 62: 1 }, cat: 1, q: '', rUnit: 20, rAcc: 12, rBun: 20 };
+
+function parts(it) {
+  const i = it.name.indexOf(' (');
+  if (SEC[it.sec].basic && i > 0) return [it.name.slice(0, i), it.name.slice(i + 2).replace(/\)$/, '')];
+  return [it.name, ''];
+}
+
+// Perlengkapan Rotary/Mower (kecuali Zena): diskon bundling hanya jika ada unit Basic. Lainnya: jika ada unit apa pun.
+const basicRule = i => SEC[i.sec].needsBasic && !/zena/i.test(i.name);
+function calc() {
+  const lines = ITEMS.filter(i => (st.qty[i.id] || 0) > 0);
+  const hasUnit = lines.some(i => SEC[i.sec].kind === 'unit');
+  const hasBasic = lines.some(i => SEC[i.sec].basic);
+  const rate = i => SEC[i.sec].kind === 'unit' ? st.rUnit : ((basicRule(i) ? hasBasic : hasUnit) ? st.rBun : st.rAcc);
+  const net = i => Math.round(i.p[st.branch] * (1 - rate(i) / 100));
+  const out = { hasUnit, hasBasic, rate, net, unit: [], acc: [], listUnit: 0, netUnit: 0, listAcc: 0, netAcc: 0 };
+  for (const i of lines) {
+    const q = st.qty[i.id], l = i.p[st.branch] * q, n = net(i) * q;
+    if (SEC[i.sec].kind === 'unit') { out.unit.push(i); out.listUnit += l; out.netUnit += n; }
+    else { out.acc.push(i); out.listAcc += l; out.netAcc += n; }
+  }
+  out.list = out.listUnit + out.listAcc;
+  out.total = out.netUnit + out.netAcc;
+  out.noBasic = out.acc.filter(i => basicRule(i) && !hasBasic);
+  return out;
+}
+
+function stepper(i) {
+  const q = st.qty[i.id] || 0;
+  if (!q) return `<span class="step"><button class="add" data-id="${i.id}" data-d="1" type="button">Tambah</button></span>`;
+  return `<span class="step"><button data-id="${i.id}" data-d="-1" type="button" aria-label="Kurangi">−</button><span class="q num">${q}</span><button data-id="${i.id}" data-d="1" type="button" aria-label="Tambah">+</button></span>`;
+}
+
+function renderCats() {
+  const og = (label, kind) => `<optgroup label="${label}">` + SECS.filter(s => s.kind === kind).map(s => `<option value="${s.id}">${esc(s.short)}</option>`).join('') + '</optgroup>';
+  $('cat').innerHTML = '<option value="all">Semua kategori</option>' + og('Unit', 'unit') + og('Perlengkapan', 'perl');
+  $('cat').value = st.cat;
+}
+
+function renderList() {
+  const c = calc(), q = st.q.trim().toLowerCase();
+  let html = '', shown = 0;
+  for (const s of SECS) {
+    if (st.cat !== 'all' && st.cat != s.id) continue;
+    const its = ITEMS.filter(i => i.sec === s.id && (!q || (i.name + ' ' + s.short).toLowerCase().includes(q)));
+    if (!its.length) continue;
+    const tag = s.kind === 'unit' ? (s.basic ? '<span class="pill">Unit Basic</span>' : '<span class="pill">Unit</span>')
+      : (s.needsBasic ? '<span class="pill">Diskon bareng unit hanya dengan Basic</span>' : '<span class="pill">Perlengkapan</span>');
+    html += `<div class="sech"><span>${s.kind === 'unit' ? 'Unit' : 'Perlengkapan'} · ${esc(s.short)} <small>${its.length} item</small></span>${tag}</div>`;
+    for (const i of its) {
+      const [n, d] = parts(i), list = i.p[st.branch];
+      const nett = c.net(i);
+      html += `<div class="row${st.qty[i.id] ? ' on' : ''}">
+        <div class="nm">${esc(n)}${d ? `<small>${esc(d)}</small>` : ''}</div>
+        <div class="pr num"><span class="net">${rp(nett)}</span><span class="list">${rp(list)}</span></div>
+        ${stepper(i)}</div>`;
+      shown++;
+    }
+  }
+  $('list').innerHTML = shown ? html : '<div class="empty">Tidak ada produk yang cocok dengan pencarian.</div>';
+}
+
+function renderCart() {
+  const c = calc();
+  let notes = '';
+  if (c.noBasic.length) notes += `<div class="note">Perlengkapan Rotary/Mower tanpa unit Basic dihitung diskon ${st.rAcc}%. Tambahkan unit Basic (Kronos, Amberjack, Boxer Rotary) untuk diskon ${st.rBun}%.</div>`;
+  if (c.acc.length && !c.hasUnit) notes += `<div class="note ok">Perlengkapan tanpa unit, diskon ${st.rAcc}%.</div>`;
+  $('notes').innerHTML = notes;
+
+  const line = i => {
+    const q = st.qty[i.id], [n] = parts(i), bad = false;
+    return `<div class="ln"><div class="t${bad ? ' bad' : ''}">${esc(n)}</div><div class="amt num">${rp(c.net(i) * q)}</div>
+      <div class="s num">${rp(c.net(i))} × ${q} · diskon ${c.rate(i)}%</div>${stepper(i)}</div>`;
+  };
+  let html = '';
+  if (c.unit.length) html += '<h3>Unit</h3>' + c.unit.map(line).join('');
+  if (c.acc.length) html += '<h3>Perlengkapan</h3>' + c.acc.map(line).join('');
+  $('lines').innerHTML = html || '<div class="empty">Belum ada item. Tambahkan unit atau perlengkapan dari daftar.</div>';
+
+  const row = (a, b, cls = '') => `<span class="${cls}">${a}</span><span class="r num ${cls}">${b}</span>`;
+  let s = '';
+  if (c.unit.length) s += row('Unit, harga list', rp(c.listUnit), 'muted') + row(`Diskon unit ${st.rUnit}%`, '− ' + rp(c.listUnit - c.netUnit), 'neg') + row('Unit nett', rp(c.netUnit));
+  if (c.acc.length) {
+    s += row('Perlengkapan, harga list', rp(c.listAcc), 'muted');
+    const g = {};
+    for (const i of c.acc) { const r = c.rate(i); g[r] = (g[r] || 0) + i.p[st.branch] * st.qty[i.id] - c.net(i) * st.qty[i.id]; }
+    for (const r of Object.keys(g).sort((a, b) => b - a)) s += row(`Diskon perlengkapan ${r}%`, '− ' + rp(g[r]), 'neg');
+    s += row('Perlengkapan nett', rp(c.netAcc));
+  }
+  $('sum').innerHTML = s;
+  $('sum').hidden = !s;
+  $('total').textContent = rp(c.total);
+  $('barTotal').textContent = rp(c.total);
+  $('save').textContent = c.list > c.total ? `Hemat ${rp(c.list - c.total)} dari harga list` : '';
+}
+
+function render() { renderList(); renderCart(); }
+
+function buildText() {
+  const c = calc(), L = [`Penawaran Quick, cabang ${BR[st.branch]}`, ''];
+  const sec = (title, arr) => { if (!arr.length) return; L.push(title); arr.forEach(i => { const q = st.qty[i.id]; L.push(`- ${parts(i)[0]} × ${q} (diskon ${c.rate(i)}%): ${rp(c.net(i) * q)}`); }); L.push(''); };
+  sec('UNIT', c.unit); sec('PERLENGKAPAN', c.acc);
+  if (c.unit.length) L.push(`Unit nett (diskon ${st.rUnit}%): ${rp(c.netUnit)}`);
+  if (c.acc.length) L.push(`Perlengkapan nett: ${rp(c.netAcc)}`);
+  L.push(`TOTAL: ${rp(c.total)}`);
+  return L.join('\n');
+}
+
+function init() {
+  $('branch').innerHTML = BR.map((b, i) => `<option value="${i}">${esc(b)}</option>`).join('');
+  $('branch').onchange = e => { st.branch = +e.target.value; render(); };
+  $('q').oninput = e => { st.q = e.target.value; renderList(); };
+  $('cat').onchange = e => { st.cat = e.target.value === 'all' ? 'all' : +e.target.value; renderList(); };
+  const step = e => {
+    const b = e.target.closest('[data-id]'); if (!b || b.disabled) return;
+    const id = +b.dataset.id, v = Math.max(0, (st.qty[id] || 0) + +b.dataset.d);
+    if (v) st.qty[id] = v; else delete st.qty[id];
+    render();
+  };
+  $('list').onclick = step; $('lines').onclick = step;
+  $('clear').onclick = () => { st.qty = {}; render(); };
+  for (const [id, k] of [['rUnit', 'rUnit'], ['rAcc', 'rAcc'], ['rBun', 'rBun']]) $(id).oninput = e => {
+    const v = parseFloat(e.target.value); st[k] = isNaN(v) ? 0 : Math.min(100, Math.max(0, v)); render();
+  };
+  $('toCart').onclick = () => $('ringkasan').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  $('copy').onclick = async () => {
+    const t = buildText(), b = $('copy'); let ok = false;
+    try { await navigator.clipboard.writeText(t); ok = true; } catch (e) {
+      const ta = document.createElement('textarea'); ta.value = t; document.body.appendChild(ta); ta.select();
+      try { ok = document.execCommand('copy'); } catch (e2) {} ta.remove();
+    }
+    b.textContent = ok ? 'Tersalin' : 'Gagal menyalin'; setTimeout(() => b.textContent = 'Salin penawaran', 1600);
+  };
+  renderCats(); render();
+}
+init();
+</script>
